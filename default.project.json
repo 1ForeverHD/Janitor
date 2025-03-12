@@ -9,9 +9,6 @@
   
         "Janitor": {
             "$path": "src"
-          },
-        "TestJanitor": {
-            "$path": "TestJanitor.server.lua"
           }
       }
     }
