@@ -1,6 +1,18 @@
 {
-	"name": "janitor",
-	"tree": {
-		"$path": "src"
-	}
-}
+    "name": "TestJanitor",
+    "emitLegacyScripts": false,
+    "tree": {
+      "$className": "DataModel",
+  
+      "ServerScriptService": {
+        "$className": "ServerScriptService",
+  
+        "Janitor": {
+            "$path": "src"
+          },
+        "TestJanitor": {
+            "$path": "TestJanitor.server.lua"
+          }
+      }
+    }
+  }

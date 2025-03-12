@@ -6,53 +6,53 @@
 -- Original by Validark
 -- Modifications by pobammer
 -- roblox-ts support by OverHash and Validark
--- LinkToInstance fixed by Elttob.
--- Cleanup edge cases fixed by codesenseAye.
+-- linkToInstance fixed by Elttob.
+-- cleanup edge cases fixed by codesenseAye.
 
 local FastDefer = require(script.FastDefer)
 local Promise = require(script.Promise)
 type Promise<T...> = Promise.TypedPromise<T...>
 
-local LinkToInstanceIndex = setmetatable({}, {
+local linkToInstanceIndex = setmetatable({}, {
 	__tostring = function()
-		return "LinkToInstanceIndex"
+		return "linkToInstanceIndex"
 	end;
 })
 
 local INVALID_METHOD_NAME =
 	"Object is a %* and as such expected `true?` for the method name and instead got %*. Traceback: %*"
 local METHOD_NOT_FOUND_ERROR = "Object %* doesn't have method %*, are you sure you want to add it? Traceback: %*"
-local NOT_A_PROMISE = "Invalid argument #1 to 'Janitor:AddPromise' (Promise expected, got %* (%*)) Traceback: %*"
+local NOT_A_PROMISE = "Invalid argument #1 to 'Janitor:addPromise' (Promise expected, got %* (%*)) Traceback: %*"
 
 export type Janitor = typeof(setmetatable({} :: {
 	CurrentlyCleaning: boolean,
 	SuppressInstanceReDestroy: boolean,
 	UnsafeThreadCleanup: boolean,
 
-	Add: <T>(self: Janitor, object: T, methodName: BooleanOrString?, index: any?) -> T,
-	AddObject: <T, A...>(
+	add: <T>(self: Janitor, object: T, methodName: BooleanOrString?, index: any?) -> T,
+	addObject: <T, A...>(
 		self: Janitor,
 		constructor: {new: (A...) -> T},
 		methodName: BooleanOrString?,
 		index: any?,
 		A...
 	) -> T,
-	AddPromise: <T...>(self: Janitor, promiseObject: Promise<T...>, index: unknown?) -> Promise<T...>,
+	addPromise: <T...>(self: Janitor, promiseObject: Promise<T...>, index: unknown?) -> Promise<T...>,
 
-	Remove: (self: Janitor, index: any) -> Janitor,
-	RemoveNoClean: (self: Janitor, index: any) -> Janitor,
+	remove: (self: Janitor, index: any) -> Janitor,
+	removeNoClean: (self: Janitor, index: any) -> Janitor,
 
-	RemoveList: (self: Janitor, ...any) -> Janitor,
-	RemoveListNoClean: (self: Janitor, ...any) -> Janitor,
+	removeList: (self: Janitor, ...any) -> Janitor,
+	removeListNoClean: (self: Janitor, ...any) -> Janitor,
 
-	Get: (self: Janitor, index: any) -> any?,
-	GetAll: (self: Janitor) -> {[any]: any},
+	get: (self: Janitor, index: any) -> any?,
+	getAll: (self: Janitor) -> {[any]: any},
 
-	Cleanup: (self: Janitor) -> (),
-	Destroy: (self: Janitor) -> (),
+	cleanup: (self: Janitor) -> (),
+	destroy: (self: Janitor) -> (),
 
-	LinkToInstance: (self: Janitor, Object: Instance, allowMultiple: boolean?) -> RBXScriptConnection,
-	LinkToInstances: (self: Janitor, ...Instance) -> Janitor,
+	linkToInstance: (self: Janitor, Object: Instance, allowMultiple: boolean?) -> RBXScriptConnection,
+	linkToInstances: (self: Janitor, ...Instance) -> Janitor,
 }, {} :: {__call: (self: Janitor) -> ()}))
 type Private = typeof(setmetatable({} :: {
 	CurrentlyCleaning: boolean,
@@ -62,30 +62,30 @@ type Private = typeof(setmetatable({} :: {
 	-- Private
 	[any]: BooleanOrString,
 
-	Add: <T>(self: Private, object: T, methodName: BooleanOrString?, index: any?) -> T,
-	AddObject: <T, A...>(
+	add: <T>(self: Private, object: T, methodName: BooleanOrString?, index: any?) -> T,
+	addObject: <T, A...>(
 		self: Private,
 		constructor: {new: (A...) -> T},
 		methodName: BooleanOrString?,
 		index: any?,
 		A...
 	) -> T,
-	AddPromise: <T...>(self: Private, promiseObject: Promise<T...>, index: unknown?) -> Promise<T...>,
+	addPromise: <T...>(self: Private, promiseObject: Promise<T...>, index: unknown?) -> Promise<T...>,
 
-	Remove: (self: Private, index: any) -> Private,
-	RemoveNoClean: (self: Private, index: any) -> Private,
+	remove: (self: Private, index: any) -> Private,
+	removeNoClean: (self: Private, index: any) -> Private,
 
-	RemoveList: (self: Private, ...any) -> Private,
-	RemoveListNoClean: (self: Private, ...any) -> Private,
+	removeList: (self: Private, ...any) -> Private,
+	removeListNoClean: (self: Private, ...any) -> Private,
 
-	Get: (self: Private, index: any) -> any?,
-	GetAll: (self: Private) -> {[any]: any},
+	get: (self: Private, index: any) -> any?,
+	getAll: (self: Private) -> {[any]: any},
 
-	Cleanup: (self: Private) -> (),
-	Destroy: (self: Private) -> (),
+	cleanup: (self: Private) -> (),
+	destroy: (self: Private) -> (),
 
-	LinkToInstance: (self: Private, object: Instance, allowMultiple: boolean?) -> RBXScriptConnection,
-	LinkToInstances: (self: Private, ...Instance) -> Private,
+	linkToInstance: (self: Private, object: Instance, allowMultiple: boolean?) -> RBXScriptConnection,
+	linkToInstances: (self: Private, ...Instance) -> Private,
 }, {} :: {__call: (self: Private) -> ()}))
 type Static = {
 	ClassName: "Janitor",
@@ -259,10 +259,11 @@ local function Remove(self: Private, index: any): Janitor
 
 	return self
 end
+Janitor.remove = Janitor.Remove
 
 type BooleanOrString = boolean | string
 
-local function Add<T>(self: Private, object: T, methodName: BooleanOrString?, index: any?): T
+local function add<T>(self: Private, object: T, methodName: BooleanOrString?, index: any?): T
 	if index then
 		Remove(self, index)
 
@@ -324,14 +325,14 @@ end
 	local obliterator = Janitor.new()
 	local part = Workspace:FindFirstChild("Part") :: Part
 
-	-- Queue the Part to be Destroyed at Cleanup time
-	obliterator:Add(part, "Destroy")
+	-- Queue the Part to be Destroyed at cleanup time
+	obliterator:add(part, "Destroy")
 
 	-- Queue function to be called with `true` methodName
-	obliterator:Add(print, true)
+	obliterator:add(print, true)
 
 	-- Close a thread.
-	obliterator:Add(task.defer(function()
+	obliterator:add(task.defer(function()
 		while true do
 			print("Running!")
 			task.wait(0.5)
@@ -339,11 +340,11 @@ end
 	end), true)
 
 	-- This implementation allows you to specify behavior for any object
-	obliterator:Add(TweenService:Create(part, TweenInfo.new(1), {Size = Vector3.one}), "Cancel")
+	obliterator:add(TweenService:Create(part, TweenInfo.new(1), {Size = Vector3.one}), "Cancel")
 
 	-- By passing an index, the object will occupy a namespace
 	-- If "CurrentTween" already exists, it will call :Remove("CurrentTween") before writing
-	obliterator:Add(TweenService:Create(part, TweenInfo.new(1), {Size = Vector3.one}), "Destroy", "CurrentTween")
+	obliterator:add(TweenService:Create(part, TweenInfo.new(1), {Size = Vector3.one}), "Destroy", "CurrentTween")
 	```
 
 	### TypeScript:
@@ -355,14 +356,14 @@ end
 	const obliterator = new Janitor<{ CurrentTween: Tween }>();
 	const part = Workspace.FindFirstChild("Part") as Part;
 
-	// Queue the part to be Destroyed at Cleanup time
-	obliterator.Add(part, "Destroy");
+	// Queue the part to be Destroyed at cleanup time
+	obliterator.add(part, "Destroy");
 
 	// Queue function to be called with `true` methodName
-	obliterator.Add(print, true);
+	obliterator.add(print, true);
 
 	// Close a thread.
-	obliterator.Add(task.defer(() => {
+	obliterator.add(task.defer(() => {
 		while (true) {
 			print("Running!");
 			task.wait(0.5);
@@ -370,14 +371,14 @@ end
 	}), true);
 
 	// This implementation allows you to specify behavior for any object
-	obliterator.Add(TweenService.Create(part, new TweenInfo(1), { Size: Vector3.one }), "Cancel");
+	obliterator.add(TweenService.Create(part, new TweenInfo(1), { Size: Vector3.one }), "Cancel");
 
 	// By passing an index, the object will occupy a namespace
 	// If "CurrentTween" already exists, it will call :Remove("CurrentTween") before writing
-	obliterator.Add(TweenService.Create(part, new TweenInfo(1), { Size: Vector3.one }), "Destroy", "CurrentTween");
+	obliterator.add(TweenService.Create(part, new TweenInfo(1), { Size: Vector3.one }), "Destroy", "CurrentTween");
 	```
 
-	@method Add
+	@method add
 	@within Janitor
 
 	@param object T -- The object you want to clean up.
@@ -385,17 +386,17 @@ end
 	@param index? unknown -- The index that can be used to clean up the object manually.
 	@return T -- The object that was passed as the first argument.
 ]=]
-Private.Add = Add
+Private.add = add
 
 --[=[
 	Constructs an object for you and adds it to the Janitor. It's really just
-	shorthand for `Janitor:Add(object.new(), methodName, index)`.
+	shorthand for `Janitor:add(object.new(), methodName, index)`.
 
 	### Luau:
 
 	```lua
 	local obliterator = Janitor.new()
-	local subObliterator = obliterator:AddObject(Janitor, "Destroy")
+	local subObliterator = obliterator:addObject(Janitor, "Destroy")
 	-- subObliterator is another Janitor!
 	```
 
@@ -405,7 +406,7 @@ Private.Add = Add
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor();
-	const subObliterator = obliterator.AddObject(Janitor, "Destroy");
+	const subObliterator = obliterator.addObject(Janitor, "Destroy");
 	```
 
 	@since v1.16.0
@@ -415,14 +416,15 @@ Private.Add = Add
 	@param ... A... -- The arguments that will be passed to the constructor.
 	@return T -- The object that was passed as the first argument.
 ]=]
-function Janitor:AddObject<T, A...>(constructor: {new: (A...) -> T}, methodName: BooleanOrString?, index: any?, ...: A...): T
-	return Add(self, constructor.new(...), methodName, index)
+function Janitor:addObject<T, A...>(constructor: {new: (A...) -> T}, methodName: BooleanOrString?, index: any?, ...: A...): T
+	return add(self, constructor.new(...), methodName, index)
 end
 
 local function Get(self: Private, index: unknown): any?
 	local this = Janitors[self]
 	return if this then this[index] else nil
 end
+Janitor.get = Get
 
 --[=[
 	Gets whatever object is stored with the given index, if it exists. This was
@@ -432,7 +434,7 @@ end
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(Workspace.Baseplate, "Destroy", "Baseplate")
+	obliterator:add(Workspace.Baseplate, "Destroy", "Baseplate")
 	print(obliterator:Get("Baseplate")) -- Returns Baseplate.
 	```
 
@@ -443,7 +445,7 @@ end
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor<{ Baseplate: Part }>();
-	obliterator.Add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
+	obliterator.add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
 	print(obliterator.Get("Baseplate")); // Returns Baseplate.
 	```
 
@@ -464,9 +466,9 @@ Janitor.Get = Get
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:AddPromise(Promise.delay(3)):andThenCall(print, "Finished!"):catch(warn)
+	obliterator:addPromise(Promise.delay(3)):andThenCall(print, "Finished!"):catch(warn)
 	task.wait(1)
-	obliterator:Cleanup()
+	obliterator:cleanup()
 	```
 
 	### TypeScript:
@@ -475,9 +477,9 @@ Janitor.Get = Get
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor();
-	obliterator.AddPromise(Promise.delay(3)).andThenCall(print, "Finished!").catch(warn);
+	obliterator.addPromise(Promise.delay(3)).andThenCall(print, "Finished!").catch(warn);
 	task.wait(1);
-	obliterator.Cleanup();
+	obliterator.cleanup();
 	```
 
 	@error NotAPromiseError -- Thrown if the promise is not a Promise.
@@ -486,7 +488,7 @@ Janitor.Get = Get
 	@param index? unknown -- The index that can be used to clean up the object manually.
 	@return Promise
 ]=]
-function Janitor:AddPromise<T...>(promiseObject: Promise<T...>, index: unknown?): Promise<T...>
+function Janitor:addPromise<T...>(promiseObject: Promise<T...>, index: unknown?): Promise<T...>
 	if not Promise then
 		return promiseObject
 	end
@@ -504,7 +506,7 @@ function Janitor:AddPromise<T...>(promiseObject: Promise<T...>, index: unknown?)
 		uniqueId = newproxy(false)
 	end
 
-	local newPromise = Add(self, Promise.new(function(resolve, _, onCancel)
+	local newPromise = add(self, Promise.new(function(resolve, _, onCancel)
 		if onCancel(function()
 			promiseObject:cancel()
 		end) then
@@ -524,13 +526,13 @@ function Janitor:AddPromise<T...>(promiseObject: Promise<T...>, index: unknown?)
 end
 
 --[=[
-	Cleans up whatever `Object` was set to this namespace by the 3rd parameter of [Janitor.Add](#Add).
+	Cleans up whatever `Object` was set to this namespace by the 3rd parameter of [Janitor.add](#add).
 
 	### Luau:
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(workspace.Baseplate, "Destroy", "Baseplate")
+	obliterator:add(workspace.Baseplate, "Destroy", "Baseplate")
 	obliterator:Remove("Baseplate")
 	```
 
@@ -541,7 +543,7 @@ end
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor<{ Baseplate: Part }>();
-	obliterator.Add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
+	obliterator.add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
 	obliterator.Remove("Baseplate");
 	```
 
@@ -560,11 +562,11 @@ Private.Remove = Remove
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed!")
 	end, true, "Function")
 
-	obliterator:RemoveNoClean("Function") -- Does not print.
+	obliterator:removeNoClean("Function") -- Does not print.
 	```
 
 	### TypeScript:
@@ -573,19 +575,19 @@ Private.Remove = Remove
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor<{ Function: () => void }>();
-	obliterator.Add(() => print("Removed!"), true, "Function");
+	obliterator.add(() => print("Removed!"), true, "Function");
 
-	obliterator.RemoveNoClean("Function"); // Does not print.
+	obliterator.removeNoClean("Function"); // Does not print.
 	```
 
-	@method RemoveNoClean
+	@method removeNoClean
 	@within Janitor
 
 	@since v1.15.0
 	@param index unknown -- The index you are removing.
 	@return Janitor
 ]=]
-function Private:RemoveNoClean(index: any): Janitor
+function Private:removeNoClean(index: any): Janitor
 	local this = Janitors[self]
 
 	if this then
@@ -606,19 +608,19 @@ end
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed One")
 	end, true, "One")
 
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed Two")
 	end, true, "Two")
 
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed Three")
 	end, true, "Three")
 
-	obliterator:RemoveList("One", "Two", "Three") -- Prints "Removed One", "Removed Two", and "Removed Three"
+	obliterator:removeList("One", "Two", "Three") -- Prints "Removed One", "Removed Two", and "Removed Three"
 	```
 
 	### TypeScript:
@@ -629,18 +631,18 @@ end
 	type NoOp = () => void
 
 	const obliterator = new Janitor<{ One: NoOp, Two: NoOp, Three: NoOp }>();
-	obliterator.Add(() => print("Removed One"), true, "One");
-	obliterator.Add(() => print("Removed Two"), true, "Two");
-	obliterator.Add(() => print("Removed Three"), true, "Three");
+	obliterator.add(() => print("Removed One"), true, "One");
+	obliterator.add(() => print("Removed Two"), true, "Two");
+	obliterator.add(() => print("Removed Three"), true, "Three");
 
-	obliterator.RemoveList("One", "Two", "Three"); // Prints "Removed One", "Removed Two", and "Removed Three"
+	obliterator.removeList("One", "Two", "Three"); // Prints "Removed One", "Removed Two", and "Removed Three"
 	```
 
 	@since v1.14.0
 	@param ... unknown -- The indices you want to remove.
 	@return Janitor
 ]=]
-function Janitor:RemoveList(...: any): Janitor
+function Janitor:removeList(...: any): Janitor
 	local this = Janitors[self]
 	if this then
 		local length = select("#", ...)
@@ -677,19 +679,19 @@ end
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed One")
 	end, true, "One")
 
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed Two")
 	end, true, "Two")
 
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Removed Three")
 	end, true, "Three")
 
-	obliterator:RemoveListNoClean("One", "Two", "Three") -- Nothing is printed.
+	obliterator:removeListNoClean("One", "Two", "Three") -- Nothing is printed.
 	```
 
 	### TypeScript:
@@ -700,18 +702,18 @@ end
 	type NoOperation = () => void
 
 	const obliterator = new Janitor<{ One: NoOperation, Two: NoOperation, Three: NoOperation }>();
-	obliterator.Add(() => print("Removed One"), true, "One");
-	obliterator.Add(() => print("Removed Two"), true, "Two");
-	obliterator.Add(() => print("Removed Three"), true, "Three");
+	obliterator.add(() => print("Removed One"), true, "One");
+	obliterator.add(() => print("Removed Two"), true, "Two");
+	obliterator.add(() => print("Removed Three"), true, "Three");
 
-	obliterator.RemoveListNoClean("One", "Two", "Three"); // Nothing is printed.
+	obliterator.removeListNoClean("One", "Two", "Three"); // Nothing is printed.
 	```
 
 	@since v1.15.0
 	@param ... unknown -- The indices you want to remove.
 	@return Janitor
 ]=]
-function Janitor:RemoveListNoClean(...: any): Janitor
+function Janitor:removeListNoClean(...: any): Janitor
 	local this = Janitors[self]
 	if this then
 		local length = select("#", ...)
@@ -778,8 +780,8 @@ end
 
 	```lua
 	local obliterator = Janitor.new()
-	obliterator:Add(Workspace.Baseplate, "Destroy", "Baseplate")
-	print(obliterator:GetAll().Baseplate) -- Prints Baseplate.
+	obliterator:add(Workspace.Baseplate, "Destroy", "Baseplate")
+	print(obliterator:getAll().Baseplate) -- Prints Baseplate.
 	```
 
 	### TypeScript:
@@ -789,14 +791,14 @@ end
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor<{ Baseplate: Part }>();
-	obliterator.Add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
-	print(obliterator.GetAll().Baseplate); // Prints Baseplate.
+	obliterator.add(Workspace.FindFirstChild("Baseplate") as Part, "Destroy", "Baseplate");
+	print(obliterator.getAll().Baseplate); // Prints Baseplate.
 	```
 
 	@since v1.15.1
 	@return {[any]: any}
 ]=]
-function Janitor:GetAll(): {[any]: any}
+function Janitor:getAll(): {[any]: any}
 	local this = Janitors[self]
 	return if this then table.freeze(table.clone(this)) else {}
 end
@@ -810,21 +812,21 @@ end
 	### Luau:
 
 	```lua
-	obliterator:Cleanup() -- Valid.
+	obliterator:cleanup() -- Valid.
 	obliterator() -- Also valid.
 	```
 
 	### TypeScript:
 
 	```ts
-	obliterator.Cleanup()
+	obliterator.cleanup()
 	// TypeScript version doesn't support the __call method of cleaning.
 	```
 
-	@method Cleanup
+	@method cleanup
 	@within Janitor
 ]=]
-local function Cleanup(self: Private): ()
+local function cleanup(self: Private): ()
 	if not self.CurrentlyCleaning then
 		local suppressInstanceReDestroy = self.SuppressInstanceReDestroy
 		local unsafeThreadCleanup = self.UnsafeThreadCleanup
@@ -894,10 +896,10 @@ local function Cleanup(self: Private): ()
 		self.UnsafeThreadCleanup = unsafeThreadCleanup
 	end
 end
-Private.Cleanup = Cleanup
+Private.cleanup = cleanup
 
 --[=[
-	Calls [Janitor.Cleanup](#Cleanup) and renders the Janitor unusable.
+	Calls [Janitor.cleanup](#cleanup) and renders the Janitor unusable.
 
 	:::warning Metatable Removal
 	Running this will make any further attempts to call a method of Janitor
@@ -905,23 +907,24 @@ Private.Cleanup = Cleanup
 	:::
 ]=]
 function Janitor:Destroy(): ()
-	Cleanup(self)
+	cleanup(self)
 	table.clear(self :: never)
 	setmetatable(self :: any, nil)
 end
+Janitor.destroy = Janitor.Destroy
 
-Private.__call = Cleanup
+Private.__call = cleanup
 
-local function LinkToInstance(self: Private, object: Instance, allowMultiple: boolean?): RBXScriptConnection
-	local indexToUse = if allowMultiple then newproxy(false) else LinkToInstanceIndex
+local function linkToInstance(self: Private, object: Instance, allowMultiple: boolean?): RBXScriptConnection
+	local indexToUse = if allowMultiple then newproxy(false) else linkToInstanceIndex
 
-	return Add(self, object.Destroying:Connect(function()
-		Cleanup(self)
+	return add(self, object.Destroying:Connect(function()
+		cleanup(self)
 	end), "Disconnect", indexToUse)
 end
 
 --[=[
-	"Links" this Janitor to an Instance, such that the Janitor will `Cleanup`
+	"Links" this Janitor to an Instance, such that the Janitor will `cleanup`
 	when the Instance is `Destroy()`d and garbage collected. A Janitor may only
 	be linked to one instance at a time, unless `allowMultiple` is true. When
 	called with a truthy `allowMultiple` parameter, the Janitor will "link" the
@@ -935,13 +938,13 @@ end
 	```lua
 	local obliterator = Janitor.new()
 
-	obliterator:Add(function()
+	obliterator:add(function()
 		print("Cleaning up!")
 	end, true)
 
 	do
 		local folder = Instance.new("Folder")
-		obliterator:LinkToInstance(folder)
+		obliterator:linkToInstance(folder)
 		folder:Destroy()
 	end
 	```
@@ -952,33 +955,33 @@ end
 	import { Janitor } from "@rbxts/janitor";
 
 	const obliterator = new Janitor();
-	obliterator.Add(() => print("Cleaning up!"), true);
+	obliterator.add(() => print("Cleaning up!"), true);
 
 	{
 		const folder = new Instance("Folder");
-		obliterator.LinkToInstance(folder, false);
+		obliterator.linkToInstance(folder, false);
 		folder.Destroy();
 	}
 	```
 
-	@method LinkToInstance
+	@method linkToInstance
 	@within Janitor
 
 	@param object Instance -- The instance you want to link the Janitor to.
 	@param allowMultiple? boolean -- Whether or not to allow multiple links on the same Janitor.
-	@return RBXScriptConnection -- A RBXScriptConnection that can be disconnected to prevent the cleanup of LinkToInstance.
+	@return RBXScriptConnection -- A RBXScriptConnection that can be disconnected to prevent the cleanup of linkToInstance.
 ]=]
-Private.LinkToInstance = LinkToInstance;
+Private.linkToInstance = linkToInstance;
 
-(Janitor :: never).LegacyLinkToInstance = LinkToInstance
+(Janitor :: never).LegacylinkToInstance = linkToInstance
 
 --[=[
 	Links several instances to a new Janitor, which is then returned.
 
 	@param ... Instance -- All the Instances you want linked.
-	@return Janitor -- A new Janitor that can be used to manually disconnect all LinkToInstances.
+	@return Janitor -- A new Janitor that can be used to manually disconnect all linkToInstances.
 ]=]
-function Janitor:LinkToInstances(...: Instance): Janitor
+function Janitor:linkToInstances(...: Instance): Janitor
 	local manualCleanup = Janitor.new()
 	for index = 1, select("#", ...) do
 		local object = select(index, ...)
@@ -986,7 +989,7 @@ function Janitor:LinkToInstances(...: Instance): Janitor
 			continue
 		end
 
-		manualCleanup:Add(LinkToInstance(self, object, true), "Disconnect")
+		manualCleanup:add(linkToInstance(self, object, true), "Disconnect")
 	end
 
 	return manualCleanup
