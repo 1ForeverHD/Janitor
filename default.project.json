@@ -1,15 +1,6 @@
 {
-    "name": "TestJanitor",
-    "emitLegacyScripts": false,
-    "tree": {
-      "$className": "DataModel",
-  
-      "ServerScriptService": {
-        "$className": "ServerScriptService",
-  
-        "Janitor": {
-            "$path": "src"
-          }
-      }
-    }
+  "name": "janitor",
+  "tree": {
+    "$path": "src"
   }
+}

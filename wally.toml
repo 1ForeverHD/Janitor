@@ -7,7 +7,7 @@ include = ["src", "default.project.json", "wally.lock", "wally.toml", "sourcemap
 name = "1foreverhd/janitor"
 realm = "shared"
 registry = "https://github.com/UpliftGames/wally-index"
-version = "1.18.7"
+version = "1.18.9"
 
 [dependencies]
 Promise = "howmanysmall/typed-promise@4.0.3"
