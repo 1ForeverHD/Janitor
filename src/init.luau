@@ -236,7 +236,7 @@ local function Remove(self: Private, index: any): Janitor
 					if self.SuppressInstanceReDestroy and typeof(object) == "Instance" then
 						pcall(Destroy, object)
 					else
-						local destroy = object.Destroy
+						local destroy = object.Destroy or object.destroy
 						if destroy then
 							destroy(object)
 						end
@@ -866,7 +866,7 @@ local function cleanup(self: Private): ()
 					if self.SuppressInstanceReDestroy and typeof(object) == "Instance" then
 						pcall(Destroy, object)
 					else
-						local destroy = object.Destroy
+						local destroy = object.Destroy or object.destroy
 						if destroy then
 							destroy(object)
 						end
