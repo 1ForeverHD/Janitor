@@ -284,7 +284,7 @@ local function add<T>(self: Private, object: T, methodName: BooleanOrString?, in
 			warn(string.format(INVALID_METHOD_NAME, typeOf, tostring(newMethodName), debug.traceback(nil, 2)))
 		end
 	else
-		if not (object :: never)[newMethodName] then
+		if not (object :: never)[newMethodName] and not object.destroy then
 			warn(
 				string.format(
 					METHOD_NOT_FOUND_ERROR,
